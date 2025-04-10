@@ -2,7 +2,6 @@
 const { DataTypes } = require('sequelize')
 const sequelize = require('../util/db')
 
-
 // 定義 animal 模型
 const animalListModel = sequelize.define(
   'animalListModel',

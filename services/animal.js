@@ -4,19 +4,21 @@ const axios = require('axios')
 const { animalModel, areaModel, shelterModel } = require('../models')
 
 class AnimalService {
-  async getAllAnimal() {
+  async getAllAnimal(filters) {
     try {
+      const whereClause = {}
+      if (filters.animal_kind) whereClause.animal_kind = filters.animal_kind
+      if (filters.animal_sex) whereClause.animal_sex = filters.animal_sex
+      if (filters.animal_bodytype)
+        whereClause.animal_bodytype = filters.animal_bodytype
+      if (filters.animal_colour)
+        whereClause.animal_colour = filters.animal_colour
+      if (filters.animal_age) whereClause.animal_age = filters.animal_age
+      if (filters.animal_shelter_pkid)
+        whereClause.animal_shelter_pkid = filters.animal_shelter_pkid
+
       const animalList = await animalModel.findAll({
-        include: [
-          {
-            model: areaModel,
-            attributes: ['name']
-          },
-          {
-            model: shelterModel,
-            attributes: ['id', 'shelter_name', 'shelter_address', 'shelter_tel']
-          }
-        ]
+        where: whereClause
       })
 
       return animalList.map((animal) => ({
@@ -121,38 +123,7 @@ class AnimalService {
         throw new Error('API 沒有回傳有效的動物資料')
       }
 
-      const shelterMap = new Map()
-
       for (const item of animalData) {
-        const shelterId = item.animal_shelter_pkid
-
-        const newShelterData = {
-          id: shelterId,
-          shelter_name: item.shelter_name,
-          shelter_address: item.shelter_address,
-          shelter_tel: item.shelter_tel
-        }
-        //檢查有沒有重複的ID
-        if (!shelterMap.has(shelterId)) {
-          //第一次遇到的收容所，直接儲存
-          await shelterModel.upsert(newShelterData)
-          shelterMap.set(shelterId, newShelterData)
-        } else {
-          //確認是否有變更
-          const existingShelterData = shelterMap.get(shelterId)
-
-          if (
-            existingShelterData.shelter_name !== newShelterData.shelter_name ||
-            existingShelterData.shelter_address !==
-              newShelterData.shelter_address ||
-            existingShelterData.shelter_tel !== newShelterData.shelter_tel
-          ) {
-            //如果資料不同，則更新資料
-            await shelterModel.upsert(newShelterData)
-            shelterMap.set(shelterId, newShelterData)
-          }
-        }
-
         const formatDate = (date) => {
           if (!date) return null
           return date.split('/').join('-')
@@ -182,9 +153,12 @@ class AnimalService {
           animal_closeddate: formatDate(item.animal_closeddate),
           animal_update: formatDate(item.animal_update),
           animal_createtime: formatDate(item.animal_createtime),
+          shelter_name: item.shelter_name,
           album_file: item.album_file,
           album_update: formatDate(item.album_update),
-          cDate: formatDate(item.cDate)
+          cDate: formatDate(item.cDate),
+          shelter_address: item.shelter_address,
+          shelter_tel: item.shelter_tel
         }
 
         if (existingAnimal) {
@@ -223,7 +197,6 @@ class AnimalService {
       return { message: '動物資料導入失敗', error: error.message, changes: [] }
     }
   }
-
   async updateAnimal(id, animalData) {
     try {
       const animal = await animalModel.findByPk(id)

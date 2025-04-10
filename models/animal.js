@@ -109,6 +109,11 @@ const animalModel = sequelize.define(
     animal_createtime: {
       type: DataTypes.DATE
     },
+    //收容所名稱 23
+    shelter_name: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
     //動物照片網址24
     album_file: {
       type: DataTypes.STRING
@@ -120,6 +125,16 @@ const animalModel = sequelize.define(
     //資料建立日期（可能與 createtime 相同）26
     cDate: {
       type: DataTypes.DATE
+    },
+    //收容所地址 27
+    shelter_address: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    //收容所電話 28
+    shelter_tel: {
+      type: DataTypes.STRING,
+      allowNull: false
     }
   },
   {
