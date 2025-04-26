@@ -31,7 +31,12 @@ router.get('/:id', async (req, res) => {
   }
 })
 
-// 手動更新動物資料
+//上傳動物照片OR影片
+router.post('/', uploadFile, async (req, res) => {
+  
+})
+
+// 手動更新動物API
 router.post('/fetch', async (req, res) => {
   try {
     const result = await animalService.fetchAndSaveAnimals()
@@ -46,8 +51,23 @@ router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params
     const updateData = req.body
+    const validFields = [
+      'shelter_pkid',
+      'variety_id',
+      'bigint',
+      'sex',
+      'age',
+      'bodytype',
+      'colour'
+    ]
+    const updateKeys = Object.keys(updateData)
 
-    //確認更改的內容
+    // 檢查是否有不合法的字段
+    for (let key of updateKeys) {
+      if (!validFields.includes(key)) {
+        return res.status(400).json({ error: `無效的字段: ${key}` })
+      }
+    }
 
     const result = await animalService.updateAnimal(id, updateData)
     res.json(result)

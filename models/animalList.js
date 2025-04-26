@@ -32,6 +32,10 @@ const animalListModel = sequelize.define(
     bodytype: {
       type: DataTypes.STRING,
       allowNull: false
+    },
+    colour: {
+      type: DataTypes.STRING,
+      allowNull: false
     }
   },
   {

@@ -8,7 +8,8 @@ const resourcesModel = sequelize.define(
   {
     id: {
       type: DataTypes.INTEGER,
-      primaryKey: true
+      primaryKey: true,
+      autoIncrement: true
     },
     animal_list_id: {
       type: DataTypes.INTEGER,

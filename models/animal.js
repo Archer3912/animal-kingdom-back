@@ -34,7 +34,7 @@ const animalModel = sequelize.define(
     },
     //動物類型06
     animal_kind: {
-      type: DataTypes.INTEGER, //  const animalKind = ['狗', '貓', '其他']
+      type: DataTypes.INTEGER, 
       allowNull: false
     },
     //動物品種07

@@ -8,7 +8,8 @@ const kindModel = sequelize.define(
   {
     id: {
       type: DataTypes.INTEGER,
-      primaryKey: true
+      primaryKey: true,
+      autoIncrement: true
     },
     kind: {
       type: DataTypes.STRING,
