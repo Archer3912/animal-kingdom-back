@@ -10,9 +10,9 @@ const uploadFile = upload('images').single('img')
 //路由這邊檢查參數，有無參數跟參數是否在合理範圍內
 // http return 400是用戶端錯誤 500是伺服器端錯誤
 // 獲取所有動物
-router.post('/', async (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const filters = req.body
+    const filters = req.query
     const animals = await animalService.getAllAnimal(filters)
     res.json(animals)
   } catch (err) {

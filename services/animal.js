@@ -22,7 +22,6 @@ class AnimalService {
   async getAllAnimal(filters) {
     try {
       const whereClause = {}
-      if (filters.id) whereClause.id = filters.id
       if (filters.shelter_pkid) whereClause.shelter_pkid = filters.shelter_pkid
       if (filters.bigint) whereClause.bigint = filters.bigint
       if (filters.sex) whereClause.sex = filters.sex
@@ -33,8 +32,8 @@ class AnimalService {
       const kindFilter = filters.kind
       const varietyFilter = filters.variety
 
-      const page = filters.page || 1
-      const limit = filters.limit || 10
+      const page = Number(filters.page) || 1
+      const limit = 10
       const offset = (page - 1) * limit
 
       const { count, rows } = await animalListModel.findAndCountAll({

@@ -16,7 +16,7 @@ router.post('/register', async (req, res) => {
     const user = await userService.registerUser(username, password)
     // 不回傳密碼資訊，避免洩漏
     const { password: _, ...userData } = user.toJSON()
-    res.status(201).json({ message: '註冊成功', user: userData })
+    res.status(201).json({ message: `username:${userData.username}註冊成功` })
   } catch (error) {
     res.status(400).json({ error: error.message })
   }
@@ -33,7 +33,7 @@ router.post('/login', async (req, res) => {
     const { token, user } = await userService.loginUser(username, password)
     // 不回傳密碼資訊，避免洩漏
     const { password: _, ...userData } = user.toJSON()
-    res.json({ message: '登入成功', token, user: userData })
+    res.json({ message: '登入成功', token})
   } catch (error) {
     res.status(400).json({ error: error.message })
   }
