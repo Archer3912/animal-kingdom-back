@@ -3,7 +3,7 @@
 //const router = express.Router()
 const { Router } = require('express')
 const router = Router()
-const { animalService } = require('../services')
+const { animalService, animalListService } = require('../services')
 const upload = require('../util/upload')
 const uploadFile = upload('images').single('img')
 
@@ -13,7 +13,7 @@ const uploadFile = upload('images').single('img')
 router.get('/', async (req, res) => {
   try {
     const filters = req.query
-    const animals = await animalService.getAllAnimal(filters)
+    const animals = await animalListService.getAllAnimal(filters)
     res.json(animals)
   } catch (err) {
     res.status(500).json({ error: '取得動物資料時發生錯誤' })
@@ -24,7 +24,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params
-    const animal = await animalService.getAnimalById(id)
+    const animal = await animalListService.getAnimalById(id)
     res.json(animal)
   } catch (err) {
     res.status(500).json({ error: '取得動物資料時發生錯誤' })
@@ -32,9 +32,7 @@ router.get('/:id', async (req, res) => {
 })
 
 //上傳動物照片OR影片
-router.post('/', uploadFile, async (req, res) => {
-  
-})
+router.post('/', uploadFile, async (req, res) => {})
 
 // 手動更新動物API
 router.post('/fetch', async (req, res) => {
@@ -46,6 +44,32 @@ router.post('/fetch', async (req, res) => {
   }
 })
 
+router.post('/create', async (req, res) => {
+  try {
+    const { shelter_pkid, variety, age, bodytype, colour } = req.body
+    if (!shelter_pkid) {
+      return res.status(400).json({ error: '請輸入動物所屬收容所' })
+    }
+    if (!variety) {
+      return res.status(400).json({ error: '請輸入variety' })
+    }
+    if (!age) {
+      return res.status(400).json({ error: '請輸入age' })
+    }
+    if (!bodytype) {
+      return res.status(400).json({ error: '請輸入body type' })
+    }
+    if (!colour) {
+      return res.status(400).json({ error: '請輸入color' })
+    }
+    const data = req.body
+    const result = await animalListService.createAnimal(data)
+    res.status(201).json(result)
+  } catch (err) {
+    res.status(400).json({ error: err.message })
+  }
+})
+
 // 更新動物資料
 router.put('/:id', async (req, res) => {
   try {
@@ -54,7 +78,6 @@ router.put('/:id', async (req, res) => {
     const validFields = [
       'shelter_pkid',
       'variety_id',
-      'bigint',
       'sex',
       'age',
       'bodytype',
@@ -69,7 +92,7 @@ router.put('/:id', async (req, res) => {
       }
     }
 
-    const result = await animalService.updateAnimal(id, updateData)
+    const result = await animalListService.updateAnimal(id, updateData)
     res.json(result)
   } catch (err) {
     res.status(500).json({ error: err.message })
@@ -80,7 +103,7 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params
-    const result = await animalService.deleteAnimal(id)
+    const result = await animalListService.deleteAnimal(id)
     res.json(result)
   } catch (err) {
     res.status(500).json({ error: err.message })

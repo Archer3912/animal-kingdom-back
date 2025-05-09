@@ -10,15 +10,14 @@ const animalListModel = sequelize.define(
       type: DataTypes.STRING,
       primaryKey: true
     },
+    animal_id: {
+      type: DataTypes.INTEGER
+    },
     shelter_pkid: {
       type: DataTypes.INTEGER,
       allowNull: false
     },
     variety_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false
-    },
-    bigint: {
       type: DataTypes.INTEGER,
       allowNull: false
     },
