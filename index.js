@@ -5,6 +5,7 @@ const cors = require('cors')
 const cron = require('node-cron') //自動更新
 //路由們，底下可以包含多個路由器設定，這邊引用路由設定檔，沒有指定檔案預設就是./routes/index.js
 const router = require('./routes')
+const path = require('path')
 const { animalService } = require('./services')
 
 
@@ -23,6 +24,10 @@ app.use(express.urlencoded({ extended: true }))
 
 //使用路由設定
 app.use(router)
+
+// 設定靜態文件目錄  //express.static() 是 Express 提供的一個中間件，專門用來提供靜態文件（如圖片、CSS 文件、JavaScript 文件等）。
+//path.join(__dirname, 'images') 構建了一個絕對路徑，它指向當前應用程式目錄下的 images 資料夾
+app.use('/images', express.static(path.join(__dirname, 'images')));
 
 // **設定自動更新，每天凌晨12點**  分鐘 小時 日期 月份 星期
 const CRON_SCHEDULE = process.env.CRON_SCHEDULE

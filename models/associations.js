@@ -2,7 +2,7 @@ const shelterModel = require('./shelter')
 const animalListModel = require('./animalList')
 const varietyModel = require('./variety')
 const kindModel = require('./kind')
-const resourcesModel = require('./resources')
+const resourcesModel = require('./resource')
 
 varietyModel.hasMany(animalListModel, {
   foreignKey: 'variety_id',

@@ -3,8 +3,8 @@ const { DataTypes } = require('sequelize')
 const sequelize = require('../util/db')
 
 // 定義 animal 模型
-const resourcesModel = sequelize.define(
-  'resourcesModel',
+const resourceModel = sequelize.define(
+  'resourceModel',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -30,4 +30,4 @@ const resourcesModel = sequelize.define(
   }
 )
 
-module.exports = resourcesModel
+module.exports = resourceModel

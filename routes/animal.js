@@ -3,9 +3,13 @@
 //const router = express.Router()
 const { Router } = require('express')
 const router = Router()
-const { animalService, animalListService } = require('../services')
+const {
+  animalService,
+  animalListService,
+  resourceService
+} = require('../services')
 const upload = require('../util/upload')
-const uploadFile = upload('images').single('img')
+const uploadMultiple = upload('images').array('images', 10)
 
 //路由這邊檢查參數，有無參數跟參數是否在合理範圍內
 // http return 400是用戶端錯誤 500是伺服器端錯誤
@@ -32,7 +36,43 @@ router.get('/:id', async (req, res) => {
 })
 
 //上傳動物照片OR影片
-router.post('/', uploadFile, async (req, res) => {})
+router.post('/resource/:id', uploadMultiple, async (req, res) => {
+  try {
+    const animal_list_id = req.params.id
+    const { type, urls } = req.body
+    const files = req.files
+
+    if (!type) {
+      return res.status(400).json({ error: '請問提供的是圖片還是影片' })
+    }
+
+    //確保url是陣列
+    const urlList = Array.isArray(urls) ? urls : urls ? [urls] : []
+
+    // 圖片 (type = 1): 可上傳多張檔案與多個網址
+    if (type == 1 && urlList.length === 0 && (!files || files.length === 0)) {
+      return res.status(400).json({ error: '圖片上傳需提供檔案或網址' })
+    }
+
+    // 影片 (type = 2): 只能接受多個網址
+    if (type == 2 && files && files.length > 0) {
+      return res.status(400).json({ error: '影片只能提供網址，請勿上傳檔案' })
+    }
+
+    if (type == 2 && urlList.length === 0) {
+      return res.status(400).json({ error: '影片需提供網址' })
+    }
+
+    const result = await resourceService.uploadResource(
+      { animal_list_id, type, urls: urlList },
+      req.files
+    )
+
+    res.status(201).json(result)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
 
 // 手動更新動物API
 router.post('/fetch', async (req, res) => {

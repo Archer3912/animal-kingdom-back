@@ -4,6 +4,7 @@ const axios = require('axios')
 const { animalModel, kindModel, varietyModel } = require('../models')
 const getKindByVariety = require('../util/kind')
 const animalListService = require('./animalList')
+const resourceService = require('./resource')
 
 class AnimalService {
   constructor() {
@@ -65,8 +66,17 @@ class AnimalService {
           if (!date) return null
           return date.split('/').join('-')
         }
-        // **插入或更新動物資料**
+
         const existingAnimal = await animalModel.findByPk(item.animal_id)
+        const apiUpdateStr = item.animal_update
+          ? formatDate(item.animal_update)
+          : null
+        const dbUpdateStr =
+          existingAnimal && existingAnimal.animal_update
+            ? existingAnimal.animal_update
+            : null
+
+        // **插入或更新動物資料**
         const newAnimalData = {
           animal_id: item.animal_id,
           animal_subid: item.animal_subid,
@@ -98,37 +108,33 @@ class AnimalService {
           shelter_tel: item.shelter_tel
         }
 
-        if (existingAnimal) {
-          // 比對舊資料與新資料
+        if (!existingAnimal) {
+          changes.push({ animal_id: item.animal_id, changes: '新增動物資料' })
+          await animalModel.create(newAnimalData)
+        } else if (
+          apiUpdateStr &&
+          (!dbUpdateStr || apiUpdateStr > dbUpdateStr)
+        ) {
+          // 比對改變欄位
           const changedFields = {}
           for (const key in newAnimalData) {
-            if (newAnimalData[key] !== existingAnimal[key]) {
+            if (newAnimalData[key] != existingAnimal[key]) {
               changedFields[key] = {
                 old: existingAnimal[key],
                 new: newAnimalData[key]
               }
             }
           }
-
-          if (Object.keys(changedFields).length > 0) {
-            const changeLog = {
-              animal_id: item.animal_id,
-              changes: changedFields
-            }
-            changes.push(changeLog)
-            await existingAnimal.update(newAnimalData)
-          }
-        } else {
-          const newAnimalLog = {
+          changes.push({
             animal_id: item.animal_id,
-            changes: '新增動物資料'
-          }
-          changes.push(newAnimalLog)
-          await animalModel.create(newAnimalData)
+            changes: changedFields
+          })
+          await existingAnimal.update(newAnimalData)
         }
       }
       try {
         await animalListService.syncAnimalList()
+        await resourceService.saveResources()
       } catch (err) {
         console.error('同步 animal_list 資料失敗:', err.message)
         return { message: '動物資料導入失敗', error: err.message, changes: [] }

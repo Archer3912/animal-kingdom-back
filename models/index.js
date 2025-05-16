@@ -4,7 +4,7 @@ const shelterModel = require('./shelter')
 const userModel = require('./user')
 const animalListModel = require('./animalList')
 const kindModel = require('./kind')
-const resourcesModel = require('./resources')
+const resourceModel = require('./resource')
 const varietyModel = require('./variety')
 require('./associations')
 
@@ -15,6 +15,6 @@ module.exports = {
   userModel,
   animalListModel,
   kindModel,
-  resourcesModel,
+  resourceModel,
   varietyModel
 }

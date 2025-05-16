@@ -95,6 +95,21 @@
     }
     ```
 
+- POST /animal/create
+
+  - 新增動物資料
+  - Response 數據格式：
+    ```
+    {
+      "shelter_pkid": 48,
+      "variety": "混種犬",
+      "sex": "M",
+      "age": "ADULT",
+      "bodytype": "BIG",
+      "colour": "黑白色"
+    }
+    ```
+
 - PUT /animal/:id
 
   - 根據 id 更新單筆動物資料
@@ -119,9 +134,21 @@
   - Request 數據格式：
     ```
     {
-        "message": "動物 ID XXXXXX 刪除成功",
+      "message": "動物 ID XXXXXX 刪除成功",
     }
     ```
+
+- POST /animal/resource/:id
+
+  - 根據 id 上傳動物的圖片或是影片
+  - Request 數據格式：
+  - 請使用 `multipart/form-data` 格式，上傳文字及檔案欄位
+
+  | 欄位名稱 | 類型 | 說明                     | 範例                       |
+  | -------- | ---- | ------------------------ | -------------------------- |
+  | type     | text | 選擇試圖片還是影片的類型 | 1 為圖片，2 為影片         |
+  | urls     | text | 圖片或影片網址           | (選擇一張照片或影片的網址) |
+  | images   | file | 要上傳的圖片             | (選擇一張照片檔案)         |
 
 - POST /user/register
 
