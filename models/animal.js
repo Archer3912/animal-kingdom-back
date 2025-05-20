@@ -4,8 +4,8 @@ const sequelize = require('../util/db')
 
 
 // 定義 animal 模型
-const animalModel = sequelize.define(
-  'animalModel',
+const originalAnimalModel = sequelize.define(
+  'originalAnimalModel',
   {
     //動物 ID（唯一識別碼）01
     animal_id: {
@@ -34,7 +34,7 @@ const animalModel = sequelize.define(
     },
     //動物類型06
     animal_kind: {
-      type: DataTypes.INTEGER, 
+      type: DataTypes.INTEGER,
       allowNull: false
     },
     //動物品種07
@@ -138,10 +138,10 @@ const animalModel = sequelize.define(
     }
   },
   {
-    tableName: 'animals', // 資料表名稱
+    tableName: 'original_animals', // 資料表名稱
     timestamps: false // 如果不需要自動生成 createdAt 和 updatedAt 時間戳欄位
   }
 )
 
 
-module.exports = animalModel
+module.exports = originalAnimalModel

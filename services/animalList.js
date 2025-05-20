@@ -1,11 +1,12 @@
 // service/animalList.js 做資料正確的判斷
 const { Op } = require('sequelize')
 const {
-  animalModel,
+  originalAnimalModel,
   animalListModel,
   shelterModel,
   varietyModel,
-  kindModel
+  kindModel,
+  resourceModel
 } = require('../models')
 const getKindByVariety = require('../util/kind')
 
@@ -47,6 +48,11 @@ class AnimalListService {
             model: shelterModel,
             attributes: ['shelter_name', 'shelter_address', 'shelter_tel'],
             required: false
+          },
+          {
+            model: resourceModel,
+            attributes: ['type', 'URL'],
+            required: false
           }
         ]
       })
@@ -61,7 +67,11 @@ class AnimalListService {
         colour: animal.colour,
         shelter_name: animal.shelterModel.shelter_name,
         shelter_address: animal.shelterModel.shelter_address,
-        shelter_tel: animal.shelterModel.shelter_tel
+        shelter_tel: animal.shelterModel.shelter_tel,
+        resources: animal.resourceModels.map((r) => ({
+        type: r.type,
+        url: r.URL
+      }))
       }))
 
       return {
@@ -100,6 +110,11 @@ class AnimalListService {
             model: shelterModel,
             attributes: ['shelter_name', 'shelter_address', 'shelter_tel'],
             required: false
+          },
+          {
+            model: resourceModel,
+            attributes: ['type', 'URL'],
+            required: false
           }
         ]
       })
@@ -118,7 +133,11 @@ class AnimalListService {
         colour: animal.colour,
         shelter_name: animal.shelterModel.shelter_name,
         shelter_address: animal.shelterModel.shelter_address,
-        shelter_tel: animal.shelterModel.shelter_tel
+        shelter_tel: animal.shelterModel.shelter_tel,
+        resources: animal.resourceModels.map((r) => ({
+          type: r.type,
+          url: r.URL
+        }))
       }
     } catch (error) {
       console.error('取得動物資料失敗:', error)
@@ -127,7 +146,7 @@ class AnimalListService {
   }
   async syncAnimalList() {
     try {
-      const animals = await animalModel.findAll()
+      const animals = await originalAnimalModel.findAll()
 
       for (const animal of animals) {
         const variety = await varietyModel.findOne({

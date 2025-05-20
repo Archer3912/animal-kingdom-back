@@ -4,7 +4,7 @@
 const { Router } = require('express')
 const router = Router()
 const {
-  animalService,
+  originalAnimalService,
   animalListService,
   resourceService
 } = require('../services')
@@ -77,7 +77,7 @@ router.post('/resource/:id', uploadMultiple, async (req, res) => {
 // 手動更新動物API
 router.post('/fetch', async (req, res) => {
   try {
-    const result = await animalService.fetchAndSaveAnimals()
+    const result = await originalAnimalService.fetchAndSaveAnimals()
     res.json(result)
   } catch (err) {
     res.status(500).json({ error: '更新動物資料時發生錯誤' })

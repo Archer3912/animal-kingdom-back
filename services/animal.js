@@ -1,12 +1,12 @@
 //service/animal.js 做資料正確的判斷
 //顯示錯誤的訊息做分類
 const axios = require('axios')
-const { animalModel, kindModel, varietyModel } = require('../models')
+const { originalAnimalModel, kindModel, varietyModel } = require('../models')
 const getKindByVariety = require('../util/kind')
 const animalListService = require('./animalList')
 const resourceService = require('./resource')
 
-class AnimalService {
+class OriginalAnimalService {
   constructor() {
     this.animalCache = null
     this.animalCacheTimestamp = 0
@@ -67,7 +67,9 @@ class AnimalService {
           return date.split('/').join('-')
         }
 
-        const existingAnimal = await animalModel.findByPk(item.animal_id)
+        const existingAnimal = await originalAnimalModel.findByPk(
+          item.animal_id
+        )
         const apiUpdateStr = item.animal_update
           ? formatDate(item.animal_update)
           : null
@@ -110,7 +112,7 @@ class AnimalService {
 
         if (!existingAnimal) {
           changes.push({ animal_id: item.animal_id, changes: '新增動物資料' })
-          await animalModel.create(newAnimalData)
+          await originalAnimalModel.create(newAnimalData)
         } else if (
           apiUpdateStr &&
           (!dbUpdateStr || apiUpdateStr > dbUpdateStr)
@@ -148,6 +150,6 @@ class AnimalService {
   }
 }
 
-const animalService = new AnimalService()
+const originalAnimalService = new OriginalAnimalService()
 
-module.exports = animalService
+module.exports = originalAnimalService

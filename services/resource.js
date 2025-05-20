@@ -1,10 +1,14 @@
 // service/resources.js 做資料正確的判斷
-const { resourceModel, animalModel, animalListModel } = require('../models')
+const {
+  resourceModel,
+  originalAnimalModel,
+  animalListModel
+} = require('../models')
 
 class ResourceService {
   async saveResources() {
     try {
-      const animals = await animalModel.findAll({
+      const animals = await originalAnimalModel.findAll({
         attributes: ['animal_id', 'album_file']
       })
 

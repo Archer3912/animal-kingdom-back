@@ -1,4 +1,4 @@
-const animalModel = require('./animal')
+const originalAnimalModel = require('./animal')
 const areaModel = require('./area')
 const shelterModel = require('./shelter')
 const userModel = require('./user')
@@ -9,7 +9,7 @@ const varietyModel = require('./variety')
 require('./associations')
 
 module.exports = {
-  animalModel,
+  originalAnimalModel,
   areaModel,
   shelterModel,
   userModel,
