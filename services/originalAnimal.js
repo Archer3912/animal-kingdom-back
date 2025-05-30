@@ -1,4 +1,4 @@
-//service/animal.js 做資料正確的判斷
+//service/originalAnimal.js 做資料正確的判斷
 //顯示錯誤的訊息做分類
 const axios = require('axios')
 const { originalAnimalModel, kindModel, varietyModel } = require('../models')
@@ -135,8 +135,9 @@ class OriginalAnimalService {
         }
       }
       try {
-        await animalListService.syncAnimalList()
-        await resourceService.saveResources()
+        const changedIds = changes.map((c) => c.animal_id)
+        await animalListService.syncAnimalList(changedIds)
+        await resourceService.saveResources(changedIds)
       } catch (err) {
         console.error('同步 animal_list 資料失敗:', err.message)
         return { message: '動物資料導入失敗', error: err.message, changes: [] }

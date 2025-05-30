@@ -1,4 +1,4 @@
-const originalAnimalModel = require('./animal')
+const originalAnimalModel = require('./originalAnimal')
 const areaModel = require('./area')
 const shelterModel = require('./shelter')
 const userModel = require('./user')

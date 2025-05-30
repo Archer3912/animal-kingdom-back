@@ -1,4 +1,4 @@
-//route/animal.js      檢查欄位
+//route/originalAnimal.js      檢查欄位
 //const express = require('express')
 //const router = express.Router()
 const { Router } = require('express')

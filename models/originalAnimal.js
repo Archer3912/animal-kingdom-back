@@ -1,4 +1,4 @@
-//model/animal.js 做數據管理
+//model/originalAnimal.js 做數據管理
 const { DataTypes } = require('sequelize')
 const sequelize = require('../util/db')
 

@@ -6,7 +6,7 @@ const cron = require('node-cron') //自動更新
 //路由們，底下可以包含多個路由器設定，這邊引用路由設定檔，沒有指定檔案預設就是./routes/index.js
 const router = require('./routes')
 const path = require('path')
-const { animalService } = require('./services')
+const { originalAnimalService } = require('./services')
 
 
 
@@ -35,7 +35,7 @@ cron.schedule(CRON_SCHEDULE, async () => {
   //schedule('* * * * *' 放進env 常數不要放程式碼
   console.log('自動更新動物資料...')
   try {
-    await animalService.fetchAndSaveAnimals()
+    await originalAnimalService.fetchAndSaveAnimals()
     console.log('動物資料自動更新成功')
   } catch (err) {
     console.error('自動更新失敗:', err)

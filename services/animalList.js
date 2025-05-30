@@ -36,7 +36,13 @@ class AnimalListService {
             model: varietyModel,
             attributes: ['variety'],
             required: true,
-            where: varietyFilter ? { variety: varietyFilter } : undefined,
+            where: varietyFilter
+              ? {
+                  variety: {
+                    [Op.like]: `%${varietyFilter}%`
+                  }
+                }
+              : undefined,
             include: {
               model: kindModel,
               attributes: ['kind'],
@@ -69,9 +75,9 @@ class AnimalListService {
         shelter_address: animal.shelterModel.shelter_address,
         shelter_tel: animal.shelterModel.shelter_tel,
         resources: animal.resourceModels.map((r) => ({
-        type: r.type,
-        url: r.URL
-      }))
+          type: r.type,
+          url: r.URL
+        }))
       }))
 
       return {
@@ -144,11 +150,20 @@ class AnimalListService {
       throw new Error('取得動物資料失敗')
     }
   }
-  async syncAnimalList() {
+  async syncAnimalList(changedIds) {
+    if (!Array.isArray(changedIds) || changedIds.length === 0) {
+      console.log('沒有動物資料異動')
+      return
+    }
     try {
-      const animals = await originalAnimalModel.findAll()
+      for (const animalId of changedIds) {
+        const animal = await originalAnimalModel.findByPk(animalId)
 
-      for (const animal of animals) {
+        if (!animal) {
+          console.warn(`找不到原始動物資料，animal_id: ${animalId}`)
+          continue
+        }
+
         const variety = await varietyModel.findOne({
           where: { variety: animal.animal_Variety }
         })
@@ -254,10 +269,7 @@ class AnimalListService {
         })
       }
 
-      const newId = await this.createId(
-        data.shelter_pkid,
-        varietyEntry.id
-      )
+      const newId = await this.createId(data.shelter_pkid, varietyEntry.id)
 
       const newAnimal = await animalListModel.create({
         id: newId,

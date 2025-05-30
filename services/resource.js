@@ -6,9 +6,14 @@ const {
 } = require('../models')
 
 class ResourceService {
-  async saveResources() {
+  async saveResources(changedIds) {
+    if (!Array.isArray(changedIds) || changedIds.length === 0) {
+      console.log('沒有圖片異動')
+      return
+    }
     try {
       const animals = await originalAnimalModel.findAll({
+        where: { animal_id: changedIds },
         attributes: ['animal_id', 'album_file']
       })
 
