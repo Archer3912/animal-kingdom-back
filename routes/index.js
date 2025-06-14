@@ -18,5 +18,9 @@ router.use('/animal', animal)
 const user = require('./user')
 router.use('/user', user)
 
+const article = require('./article')
+router.use('/article', article)
+
+
 
 module.exports = router

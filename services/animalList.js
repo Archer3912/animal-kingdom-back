@@ -82,12 +82,10 @@ class AnimalListService {
 
       return {
         data: results,
-        pagination: {
-          total: count,
-          page,
-          limit,
-          totalPages: Math.ceil(count / limit)
-        }
+        total: count,
+        page,
+        limit,
+        totalPages: Math.ceil(count / limit)
       }
     } catch (error) {
       console.error('取得 animalList 資料失敗:', error)

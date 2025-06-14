@@ -4,7 +4,6 @@ const { userModel } = require('../models')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const nodemailer = require('nodemailer')
-
 const SECRET_KEY = process.env.SECRET_KEY
 
 class UserService {
@@ -24,7 +23,7 @@ class UserService {
     return token
   }
 
-  async completeRegister(token, password) {
+  async completeRegister(token, password, role = 'user') {
     if (!password || password.length < 6) {
       throw new Error('密碼長度需至少6個字元')
     }
@@ -55,7 +54,8 @@ class UserService {
     const user = await userModel.create({
       username,
       email,
-      password: hashedPassword
+      password: hashedPassword,
+      role
     })
 
     return user
@@ -71,7 +71,7 @@ class UserService {
     if (!isMatch) throw new Error('密碼錯誤')
 
     const token = jwt.sign(
-      { id: user.id, username: user.username },
+      { id: user.id, username: user.username, role: user.role },
       SECRET_KEY,
       { expiresIn: '1d' }
     )

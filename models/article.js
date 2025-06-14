@@ -1,38 +1,41 @@
-// models/user.js
+//model/article.js 做數據管理
 const { DataTypes } = require('sequelize')
 const sequelize = require('../util/db')
 
-const userModel = sequelize.define(
-  'userModel',
+// 定義 article 模型
+const articleModel = sequelize.define(
+  'articleModel',
   {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true
     },
-    username: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      unique: true
-    },
-    email: {
+    title: {
       type: DataTypes.STRING,
       allowNull: false
     },
-    password: {
+    author: {
       type: DataTypes.STRING,
       allowNull: false
     },
-    role: {
+    content: {
       type: DataTypes.STRING,
-      allowNull: false,
-      defaultValue: 'user'
+      allowNull: false
+    },
+    createTime: {
+      type: DataTypes.DATE,
+      allowNull: false
+    },
+    updateTime: {
+      type: DataTypes.DATE,
+      allowNull: false
     }
   },
   {
-    tableName: 'users', // 資料表名稱
+    tableName: 'article', // 資料表名稱
     timestamps: false // 如果不需要自動生成 createdAt 和 updatedAt 時間戳欄位
   }
 )
 
-module.exports = userModel
+module.exports = articleModel

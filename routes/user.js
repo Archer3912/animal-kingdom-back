@@ -13,6 +13,9 @@ router.post('/start-register', async (req, res) => {
     if (!username || !email) {
       return res.status(400).json({ error: '帳號與信箱為必填' })
     }
+    if (userService.checkEmail(email)) {
+      return res.status(400).json({ error: '信箱格式錯誤' })
+    }
     const token = await userService.startRegister(username, email)
     // 不回傳密碼資訊，避免洩漏
     res
@@ -22,7 +25,6 @@ router.post('/start-register', async (req, res) => {
     res.status(400).json({ error: error.message })
   }
 })
-
 
 //點擊驗證碼之後，輸入密碼完成註冊
 router.post('/complete-register', async (req, res) => {
@@ -51,7 +53,11 @@ router.post('/login', async (req, res) => {
     const { token, user } = await userService.loginUser(username, password)
     // 不回傳密碼資訊，避免洩漏
     const { password: _, ...userData } = user.toJSON()
-    res.json({ message: '登入成功', token})
+    res.json({
+      message: '登入成功',
+      token,
+      role: user.role
+    })
   } catch (error) {
     res.status(400).json({ error: error.message })
   }
