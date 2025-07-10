@@ -20,13 +20,19 @@ const userModel = sequelize.define(
       allowNull: false
     },
     password: {
-      type: DataTypes.STRING,
-      allowNull: false
+      type: DataTypes.STRING
     },
     role: {
       type: DataTypes.STRING,
       allowNull: false,
       defaultValue: 'user'
+    },
+    verifyToken: {
+      type: DataTypes.STRING
+    },
+    isVerified: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
     }
   },
   {

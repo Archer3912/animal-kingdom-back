@@ -33,10 +33,13 @@ router.post('/complete-register', async (req, res) => {
     if (!token || !password) {
       return res.status(400).json({ error: '驗證 token 與密碼為必填' })
     }
-    const user = await userService.completeRegister(token, password)
+    const result = await userService.completeRegister(token, password)
+    const { loginToken, user } = result
     // 不回傳密碼避免洩漏
     const { password: _, ...userData } = user.toJSON()
-    res.status(201).json({ message: '註冊完成' })
+    res
+      .status(201)
+      .json({ message: '註冊完成', token: loginToken, user: userData })
   } catch (error) {
     res.status(400).json({ error: error.message })
   }
@@ -56,7 +59,7 @@ router.post('/login', async (req, res) => {
     res.json({
       message: '登入成功',
       token,
-      role: user.role
+      user
     })
   } catch (error) {
     res.status(400).json({ error: error.message })

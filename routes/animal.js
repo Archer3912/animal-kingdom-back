@@ -24,6 +24,15 @@ router.get('/', async (req, res) => {
   }
 })
 
+router.get('/enums', async (req, res) => {
+  try {
+    const enums = await animalListService.getEnumOptions()
+    res.json(enums)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // 獲取單一動物
 router.get('/:id', async (req, res) => {
   try {

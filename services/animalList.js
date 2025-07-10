@@ -1,5 +1,5 @@
 // service/animalList.js 做資料正確的判斷
-const { Op } = require('sequelize')
+const { Op, Sequelize } = require('sequelize')
 const {
   originalAnimalModel,
   animalListModel,
@@ -148,6 +148,62 @@ class AnimalListService {
       throw new Error('取得動物資料失敗')
     }
   }
+
+  async getEnumOptions() {
+    try {
+      const kinds = await kindModel.findAll({
+        attributes: ['id', 'kind']
+      })
+
+      const varieties = await varietyModel.findAll({
+        attributes: ['id', 'variety', 'kind_id']
+      })
+
+      const shelters = await shelterModel.findAll({
+        attributes: ['id', 'shelter_name']
+      })
+
+      const rawColours = await animalListModel.findAll({
+        attributes: [
+          [
+            Sequelize.fn('DISTINCT', Sequelize.col('colour')),
+            'colour'
+          ]
+        ],
+        where: {
+          colour: {
+            [Op.not]: null
+          }
+        },
+        raw: true
+      })
+
+      const colourList = rawColours
+        .map((c) => c.colour?.trim())
+        .filter((c) => !!c && c !== '')
+
+      return {
+        sex: ['M', 'F', 'N'],
+        age: ['CHILD', 'ADULT'],
+        bodytype: ['SMALL', 'MEDIUM', 'BIG'],
+        colour: colourList,
+        kinds: kinds.map((k) => ({ id: k.id, kind: k.kind })),
+        varieties: varieties.map((v) => ({
+          id: v.id,
+          variety: v.variety,
+          kind_id: v.kind_id
+        })),
+        shelters: shelters.map((s) => ({
+          id: s.id,
+          name: s.shelter_name
+        }))
+      }
+    } catch (error) {
+      console.error('取得 ENUM 選項失敗:', error)
+      throw new Error('無法取得 ENUM 選項')
+    }
+  }
+
   async syncAnimalList(changedIds) {
     if (!Array.isArray(changedIds) || changedIds.length === 0) {
       console.log('沒有動物資料異動')
