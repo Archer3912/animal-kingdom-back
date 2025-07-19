@@ -9,6 +9,7 @@ const {
   resourceService
 } = require('../services')
 const upload = require('../util/upload')
+const auth = require('../middlewares/auth')
 const uploadMultiple = upload('images').array('images', 10)
 
 //路由這邊檢查參數，有無參數跟參數是否在合理範圍內
@@ -93,7 +94,8 @@ router.post('/fetch', async (req, res) => {
   }
 })
 
-router.post('/create', async (req, res) => {
+//新增動物資料
+router.post('/create', auth.verifyToken, async (req, res) => {
   try {
     const { shelter_pkid, variety, age, bodytype, colour } = req.body
     if (!shelter_pkid) {
@@ -111,7 +113,11 @@ router.post('/create', async (req, res) => {
     if (!colour) {
       return res.status(400).json({ error: '請輸入color' })
     }
-    const data = req.body
+    const data = {
+      ...req.body,
+      userId: req.user.id, // 送養人員為當前登入會員
+      state: '待領養'
+    }
     const result = await animalListService.createAnimal(data)
     res.status(201).json(result)
   } catch (err) {

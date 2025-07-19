@@ -19,6 +19,11 @@ class AnimalListService {
       if (filters.age) whereClause.age = filters.age
       if (filters.bodytype) whereClause.bodytype = filters.bodytype
       if (filters.colour) whereClause.colour = filters.colour
+      if (filters.state) {
+        whereClause.state = filters.state
+      } else {
+        whereClause.state = '可領養'
+      }
 
       const kindFilter = filters.kind
       const varietyFilter = filters.variety
@@ -165,10 +170,7 @@ class AnimalListService {
 
       const rawColours = await animalListModel.findAll({
         attributes: [
-          [
-            Sequelize.fn('DISTINCT', Sequelize.col('colour')),
-            'colour'
-          ]
+          [Sequelize.fn('DISTINCT', Sequelize.col('colour')), 'colour']
         ],
         where: {
           colour: {
@@ -244,17 +246,13 @@ class AnimalListService {
           sex: animal.animal_sex,
           age: animal.animal_age,
           bodytype: animal.animal_bodytype,
-          colour: animal.animal_colour
+          colour: animal.animal_colour,
+          state: animal.animal_state || '可領養'
         }
 
         if (existingListItem) {
           await existingListItem.update(listData)
         } else {
-          const newId = await this.createId(
-            animal.animal_shelter_pkid,
-            variety.id
-          )
-          listData.id = newId
           await animalListModel.create(listData)
         }
       }
@@ -264,6 +262,15 @@ class AnimalListService {
       console.error('同步 animal_list 資料失敗:', error)
       throw new Error('同步 animal_list 資料失敗')
     }
+  }
+
+  async markRemovedAnimals(removedAnimalIds) {
+    if (!removedAnimalIds || removedAnimalIds.length === 0) return
+
+    await animalListModel.update(
+      { state: '政府API已移除' },
+      { where: { animal_id: removedAnimalIds } }
+    )
   }
 
   async createId(shelterPkid, varietyId) {
@@ -309,6 +316,8 @@ class AnimalListService {
         throw new Error(`體型只能是 ${bodyType.join('/')} 其中之一`)
       }
 
+      if (!data.userId) throw new Error('尚未登入會員')
+
       let varietyEntry = await varietyModel.findOne({
         where: { variety: data.variety }
       })
@@ -332,7 +341,9 @@ class AnimalListService {
         sex: data.sex,
         age: data.age,
         bodytype: data.bodytype,
-        colour: data.colour
+        colour: data.colour,
+        userId: data.userId,
+        state: data.state
       })
 
       return { message: '新增成功', id: newAnimal.id }
@@ -359,6 +370,7 @@ class AnimalListService {
       if (animalData.age) updatedData.age = animalData.age
       if (animalData.bodytype) updatedData.bodytype = animalData.bodytype
       if (animalData.colour) updatedData.colour = animalData.colour
+      if (animalData.state) updatedData.state = animalData.state
 
       // 更新資料
       if (Object.keys(updatedData).length > 0) {

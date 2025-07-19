@@ -7,6 +7,7 @@ const kindModel = require('./kind')
 const resourceModel = require('./resource')
 const varietyModel = require('./variety')
 const articleModel = require('./article')
+const adoptionModel = require('./adoption')
 require('./associations')
 
 module.exports = {
@@ -18,5 +19,6 @@ module.exports = {
   kindModel,
   resourceModel,
   varietyModel,
-  articleModel
+  articleModel,
+  adoptionModel
 }

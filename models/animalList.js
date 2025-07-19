@@ -7,7 +7,7 @@ const animalListModel = sequelize.define(
   'animalListModel',
   {
     id: {
-      type: DataTypes.STRING,
+      type: DataTypes.INTEGER,
       primaryKey: true
     },
     animal_id: {
@@ -33,6 +33,13 @@ const animalListModel = sequelize.define(
       allowNull: false
     },
     colour: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    userId: {
+      type: DataTypes.STRING
+    },
+    state: {
       type: DataTypes.STRING,
       allowNull: false
     }

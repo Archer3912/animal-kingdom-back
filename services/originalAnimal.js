@@ -31,52 +31,53 @@ class OriginalAnimalService {
         throw new Error('API 沒有回傳有效的動物資料')
       }
 
+      const apiAnimalIds = animalData.map((item) => item.animal_id)
+
+      const existingAnimals = await originalAnimalModel.findAll({ raw: true })
+      const existingAnimalMap = new Map(
+        existingAnimals.map((item) => [item.animal_id, item])
+      )
+      const existingAnimalIds = existingAnimals.map((item) => item.animal_id)
+
+      const kinds = await kindModel.findAll({ raw: true })
+      const kindCache = new Map(kinds.map((k) => [k.kind, k]))
+
+      const varieties = await varietyModel.findAll({ raw: true })
+      const varietyCache = new Map(varieties.map((v) => [v.variety, v]))
+
+      const animalsToCreate = []
+      const animalsToUpdate = []
+
+      const formatDate = (date) => {
+        if (!date) return null
+        return date.split('/').join('-')
+      }
+
       for (const item of animalData) {
         item.animal_Variety = cleanVariety(item.animal_Variety)
+
+        // 取得 kind，快取或新增
         const detectedKind = getKindByVariety(item.animal_Variety)
         let kindRecord = kindCache.get(detectedKind)
         if (!kindRecord) {
-          kindRecord = await kindModel.findOne({
-            where: { kind: detectedKind }
-          })
-          if (!kindRecord) {
-            kindRecord = await kindModel.create({ kind: detectedKind })
-          }
-          kindCache.set(detectedKind, kindRecord)
+          kindRecord = await kindModel.create({ kind: detectedKind })
+          kindCache.set(detectedKind, kindRecord.get({ plain: true })) // 將 Sequelize 實例轉成物件
         }
 
+        // 取得 variety，快取或新增
         const varietyKey = item.animal_Variety || '其他'
         let varietyRecord = varietyCache.get(varietyKey)
-
         if (!varietyRecord) {
-          varietyRecord = await varietyModel.findOne({
-            where: { variety: item.animal_Variety }
+          varietyRecord = await varietyModel.create({
+            variety: varietyKey,
+            kind_id: kindRecord.id
           })
-
-          if (!varietyRecord) {
-            varietyRecord = await varietyModel.create({
-              variety: item.animal_Variety,
-              kind_id: kindRecord.id
-            })
-          }
-          varietyCache.set(varietyKey, varietyRecord)
+          varietyCache.set(varietyKey, varietyRecord.get({ plain: true }))
         }
 
-        const formatDate = (date) => {
-          if (!date) return null
-          return date.split('/').join('-')
-        }
-
-        const existingAnimal = await originalAnimalModel.findByPk(
-          item.animal_id
-        )
         const apiUpdateStr = item.animal_update
           ? formatDate(item.animal_update)
           : null
-        const dbUpdateStr =
-          existingAnimal && existingAnimal.animal_update
-            ? existingAnimal.animal_update
-            : null
 
         // **插入或更新動物資料**
         const newAnimalData = {
@@ -110,14 +111,17 @@ class OriginalAnimalService {
           shelter_tel: item.shelter_tel
         }
 
+        const existingAnimal = existingAnimalMap.get(item.animal_id)
+        const dbUpdateStr = existingAnimal ? existingAnimal.animal_update : null
+
         if (!existingAnimal) {
+          animalsToCreate.push(newAnimalData)
           changes.push({ animal_id: item.animal_id, changes: '新增動物資料' })
-          await originalAnimalModel.create(newAnimalData)
         } else if (
           apiUpdateStr &&
           (!dbUpdateStr || apiUpdateStr > dbUpdateStr)
         ) {
-          // 比對改變欄位
+          // 比較有變更欄位才更新
           const changedFields = {}
           for (const key in newAnimalData) {
             if (newAnimalData[key] != existingAnimal[key]) {
@@ -127,13 +131,43 @@ class OriginalAnimalService {
               }
             }
           }
-          changes.push({
+          changes.push({ animal_id: item.animal_id, changes: changedFields })
+          animalsToUpdate.push({
             animal_id: item.animal_id,
-            changes: changedFields
+            data: newAnimalData
           })
-          await existingAnimal.update(newAnimalData)
         }
       }
+
+      if (animalsToCreate.length > 0) {
+        await originalAnimalModel.bulkCreate(animalsToCreate)
+      }
+
+      for (const updateItem of animalsToUpdate) {
+        await originalAnimalModel.update(updateItem.data, {
+          where: { animal_id: updateItem.animal_id }
+        })
+      }
+
+      // 刪除 API 裡已不存在的資料
+      const removedAnimalIds = existingAnimalIds.filter(
+        (id) => !apiAnimalIds.includes(id)
+      )
+      if (removedAnimalIds.length > 0) {
+        await originalAnimalModel.destroy({
+          where: { animal_id: removedAnimalIds }
+        })
+
+        await animalListService.markRemovedAnimals(removedAnimalIds)
+
+        changes.push(
+          ...removedAnimalIds.map((id) => ({
+            animal_id: id,
+            changes: '已從 API 消失，從original_animals裡移除'
+          }))
+        )
+      }
+
       try {
         const changedIds = changes.map((c) => c.animal_id)
         await animalListService.syncAnimalList(changedIds)

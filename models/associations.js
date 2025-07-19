@@ -4,6 +4,7 @@ const varietyModel = require('./variety')
 const kindModel = require('./kind')
 const resourcesModel = require('./resource')
 const areaModel = require('./area')
+const adoptionModel = require('./adoption')
 
 varietyModel.hasMany(animalListModel, {
   foreignKey: 'variety_id',
@@ -52,5 +53,15 @@ areaModel.hasMany(shelterModel, {
 
 shelterModel.belongsTo(areaModel, {
   foreignKey: 'areas_id',
+  targetKey: 'id'
+})
+
+animalListModel.hasMany(adoptionModel, {
+  foreignKey: 'animal_list_id',
+  sourceKey: 'id'
+})
+
+adoptionModel.belongsTo(animalListModel, {
+  foreignKey: 'animal_list_id',
   targetKey: 'id'
 })
