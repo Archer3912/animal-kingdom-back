@@ -1,6 +1,7 @@
 //route/originalAnimal.js      檢查欄位
 //const express = require('express')
 //const router = express.Router()
+// 路由要多加s https://medium.com/itsems-frontend/api-%E6%98%AF%E4%BB%80%E9%BA%BC-restful-api-%E5%8F%88%E6%98%AF%E4%BB%80%E9%BA%BC-a001a85ab638
 const { Router } = require('express')
 const router = Router()
 const {
@@ -95,7 +96,8 @@ router.post('/fetch', async (req, res) => {
 })
 
 //新增動物資料
-router.post('/create', auth.verifyToken, async (req, res) => {
+router.post('/create', auth.verifyToken(), async (req, res) => {
+  console.log('進入 create route')
   try {
     const { shelter_pkid, variety, age, bodytype, colour } = req.body
     if (!shelter_pkid) {
@@ -116,7 +118,7 @@ router.post('/create', auth.verifyToken, async (req, res) => {
     const data = {
       ...req.body,
       userId: req.user.id, // 送養人員為當前登入會員
-      state: '待領養'
+      state: '可領養'
     }
     const result = await animalListService.createAnimal(data)
     res.status(201).json(result)

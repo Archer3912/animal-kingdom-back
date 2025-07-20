@@ -21,6 +21,8 @@ router.use('/user', user)
 const article = require('./article')
 router.use('/article', article)
 
+const adoption = require('./adoption')
+router.use('/adoption', adoption)
 
 
 module.exports = router

@@ -7,7 +7,7 @@ const animalListModel = sequelize.define(
   'animalListModel',
   {
     id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING,
       primaryKey: true
     },
     animal_id: {
