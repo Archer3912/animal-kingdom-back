@@ -1,7 +1,6 @@
 //route/originalAnimal.js      檢查欄位
 //const express = require('express')
 //const router = express.Router()
-// 路由要多加s https://medium.com/itsems-frontend/api-%E6%98%AF%E4%BB%80%E9%BA%BC-restful-api-%E5%8F%88%E6%98%AF%E4%BB%80%E9%BA%BC-a001a85ab638
 const { Router } = require('express')
 const router = Router()
 const {
@@ -12,6 +11,7 @@ const {
 const upload = require('../util/upload')
 const auth = require('../middlewares/auth')
 const uploadMultiple = upload('images').array('images', 10)
+const AnimalStates = require('../constants/animalStates')
 
 //路由這邊檢查參數，有無參數跟參數是否在合理範圍內
 // http return 400是用戶端錯誤 500是伺服器端錯誤
@@ -95,11 +95,10 @@ router.post('/fetch', async (req, res) => {
   }
 })
 
-//新增動物資料
+//新增(送養)動物資料
 router.post('/create', auth.verifyToken(), async (req, res) => {
-  console.log('進入 create route')
   try {
-    const { shelter_pkid, variety, age, bodytype, colour } = req.body
+    const { shelter_pkid, variety, age, bodytype, colour, state } = req.body
     if (!shelter_pkid) {
       return res.status(400).json({ error: '請輸入動物所屬收容所' })
     }
@@ -115,10 +114,21 @@ router.post('/create', auth.verifyToken(), async (req, res) => {
     if (!colour) {
       return res.status(400).json({ error: '請輸入color' })
     }
+    let animalState
+    if (state) {
+      if (AnimalStates.fromText[state] !== undefined) {
+        animalState = AnimalStates.fromText[state]
+      } else {
+        animalState = AnimalStates.AVAILABLE
+      }
+    } else {
+      animalState = AnimalStates.AVAILABLE
+    }
+
     const data = {
       ...req.body,
       userId: req.user.id, // 送養人員為當前登入會員
-      state: '可領養'
+      state: animalState
     }
     const result = await animalListService.createAnimal(data)
     res.status(201).json(result)

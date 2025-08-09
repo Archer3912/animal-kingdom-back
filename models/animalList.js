@@ -40,7 +40,7 @@ const animalListModel = sequelize.define(
       type: DataTypes.STRING
     },
     state: {
-      type: DataTypes.STRING,
+      type: DataTypes.INTEGER,
       allowNull: false
     }
   },

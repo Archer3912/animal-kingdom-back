@@ -11,6 +11,9 @@ const shelterModel = sequelize.define(
       type: DataTypes.INTEGER,
       primaryKey: true
     },
+    areas_id: {
+      type: DataTypes.INTEGER
+    },
     //收容所名稱 23
     shelter_name: {
       type: DataTypes.STRING,

@@ -1,14 +1,18 @@
 // service/animalList.js 做資料正確的判斷
 const { Op, Sequelize } = require('sequelize')
 const {
+  sequelize,
   originalAnimalModel,
   animalListModel,
   shelterModel,
   varietyModel,
   kindModel,
-  resourceModel
+  resourceModel,
+  areaModel,
+  surrenderModel
 } = require('../models')
 const getKindByVariety = require('../util/kind')
+const AnimalStates = require('../constants/animalStates')
 
 class AnimalListService {
   async getAllAnimal(filters) {
@@ -20,9 +24,18 @@ class AnimalListService {
       if (filters.bodytype) whereClause.bodytype = filters.bodytype
       if (filters.colour) whereClause.colour = filters.colour
       if (filters.state) {
-        whereClause.state = filters.state
+        // 如果 filters.state 是中文，就轉成對應數字
+        if (AnimalStates.fromText.hasOwnProperty(filters.state)) {
+          whereClause.state = AnimalStates.fromText[filters.state]
+        } else if (!isNaN(filters.state)) {
+          // 若是數字字串，轉成數字（ex: "0" -> 0）
+          whereClause.state = parseInt(filters.state)
+        } else {
+          // 無效的值，略過
+          whereClause.state = AnimalStates.AVAILABLE
+        }
       } else {
-        whereClause.state = '可領養'
+        whereClause.state = AnimalStates.AVAILABLE
       }
 
       const kindFilter = filters.kind
@@ -31,6 +44,21 @@ class AnimalListService {
       const page = Number(filters.page) || 1
       const limit = 10
       const offset = (page - 1) * limit
+
+      let areaIdFilter = undefined
+      if (filters.areas) {
+        if (!isNaN(filters.areas)) {
+          areaIdFilter = parseInt(filters.areas)
+        } else {
+          const areaRecord = await areaModel.findOne({
+            where: { name: filters.areas },
+            attributes: ['id']
+          })
+          if (areaRecord) {
+            areaIdFilter = areaRecord.id
+          }
+        }
+      }
 
       const { count, rows } = await animalListModel.findAndCountAll({
         where: whereClause,
@@ -58,7 +86,8 @@ class AnimalListService {
           {
             model: shelterModel,
             attributes: ['shelter_name', 'shelter_address', 'shelter_tel'],
-            required: false
+            required: true,
+            where: filters.areas_id ? { areas_id: filters.areas_id } : undefined
           },
           {
             model: resourceModel,
@@ -76,6 +105,7 @@ class AnimalListService {
         age: animal.age,
         bodytype: animal.bodytype,
         colour: animal.colour,
+        state: AnimalStates.toText[animal.state],
         shelter_name: animal.shelterModel.shelter_name,
         shelter_address: animal.shelterModel.shelter_address,
         shelter_tel: animal.shelterModel.shelter_tel,
@@ -140,6 +170,7 @@ class AnimalListService {
         age: animal.age,
         bodytype: animal.bodytype,
         colour: animal.colour,
+        state: AnimalStates.toText[animal.state],
         shelter_name: animal.shelterModel.shelter_name,
         shelter_address: animal.shelterModel.shelter_address,
         shelter_tel: animal.shelterModel.shelter_tel,
@@ -168,6 +199,10 @@ class AnimalListService {
         attributes: ['id', 'shelter_name']
       })
 
+      const areas = await areaModel.findAll({
+        attributes: ['id', 'name']
+      })
+
       const rawColours = await animalListModel.findAll({
         attributes: [
           [Sequelize.fn('DISTINCT', Sequelize.col('colour')), 'colour']
@@ -189,15 +224,23 @@ class AnimalListService {
         age: ['CHILD', 'ADULT'],
         bodytype: ['SMALL', 'MEDIUM', 'BIG'],
         colour: colourList,
-        kinds: kinds.map((k) => ({ id: k.id, kind: k.kind })),
-        varieties: varieties.map((v) => ({
+        kind: kinds.map((k) => ({ id: k.id, kind: k.kind })),
+        variety: varieties.map((v) => ({
           id: v.id,
           variety: v.variety,
           kind_id: v.kind_id
         })),
-        shelters: shelters.map((s) => ({
+        shelter_pkid: shelters.map((s) => ({
           id: s.id,
           name: s.shelter_name
+        })),
+        areas_id: areas.map((a) => ({
+          id: a.id,
+          name: a.name
+        })),
+        state: Object.entries(AnimalStates.toText).map(([value, text]) => ({
+          value: parseInt(value),
+          text
         }))
       }
     } catch (error) {
@@ -234,9 +277,10 @@ class AnimalListService {
           where: { animal_id: animal.animal_id }
         })
 
-        const shelterPkid = animal.animal_shelter_pkid
-        const varietyId = variety.id
-        const newId = await this.createId(shelterPkid, varietyId)
+        const newId = await this.createId(variety.id, {
+          source: 'sync',
+          createTime: animal.animal_createtime // 已是 YYYY-MM-DD
+        })
 
         const listData = {
           id: newId,
@@ -247,7 +291,7 @@ class AnimalListService {
           age: animal.animal_age,
           bodytype: animal.animal_bodytype,
           colour: animal.animal_colour,
-          state: animal.animal_state || '可領養'
+          state: animal.animal_state || AnimalStates.AVAILABLE
         }
 
         if (existingListItem) {
@@ -268,18 +312,28 @@ class AnimalListService {
     if (!removedAnimalIds || removedAnimalIds.length === 0) return
 
     await animalListModel.update(
-      { state: '政府API已移除' },
+      { state: AnimalStates.REMOVED_FROM_API },
       { where: { animal_id: removedAnimalIds } }
     )
   }
 
-  async createId(shelterPkid, varietyId) {
-    // 把收容所和品種的編號補零
-    const shelterStr = String(shelterPkid)
-    const varietyStr = String(varietyId).padStart(2, '0')
+  async createId(varietyId, options = {}) {
+    let dateStr
 
-    // 做出前綴：像 48002
-    const prefix = shelterStr + varietyStr
+    if (options.source === 'sync' && options.createTime) {
+      // syncAnimalList，取 originalAnimalModel.animal_createtime
+      dateStr = options.createTime.replace(/-/g, '').slice(2)
+    } else {
+      // createAnimal ，取用系統日期
+      const now = new Date()
+      const yyyy = now.getFullYear().toString().slice(2) // '25'
+      const mm = String(now.getMonth() + 1).padStart(2, '0')
+      const dd = String(now.getDate()).padStart(2, '0')
+      dateStr = `${yyyy}${mm}${dd}`
+    }
+
+    const varietyStr = String(varietyId).padStart(3, '0')
+    const prefix = dateStr + varietyStr
 
     // 找出目前已有的最大 ID
     const lastEntry = await animalListModel.findOne({
@@ -305,6 +359,8 @@ class AnimalListService {
   }
 
   async createAnimal(data) {
+    const transaction = await sequelize.transaction()
+
     try {
       const sex = ['M', 'F', 'N']
       const defaultSex = 'N'
@@ -319,36 +375,64 @@ class AnimalListService {
       if (!data.userId) throw new Error('尚未登入會員')
 
       let varietyEntry = await varietyModel.findOne({
-        where: { variety: data.variety }
+        where: { variety: data.variety },
+        transaction
       })
 
       if (!varietyEntry) {
         const kindName = getKindByVariety(data.variety)
-        const kindEntry = await kindModel.findOne({ where: { kind: kindName } })
-
-        varietyEntry = await varietyModel.create({
-          variety: data.variety,
-          kind_id: kindEntry.id
+        const kindEntry = await kindModel.findOne({
+          where: { kind: kindName },
+          transaction
         })
+
+        varietyEntry = await varietyModel.create(
+          {
+            variety: data.variety,
+            kind_id: kindEntry.id
+          },
+          { transaction }
+        )
       }
 
-      const newId = await this.createId(data.shelter_pkid, varietyEntry.id)
-
-      const newAnimal = await animalListModel.create({
-        id: newId,
-        shelter_pkid: data.shelter_pkid,
-        variety_id: varietyEntry.id,
-        sex: data.sex,
-        age: data.age,
-        bodytype: data.bodytype,
-        colour: data.colour,
-        userId: data.userId,
-        state: data.state
+      const newId = await this.createId(varietyEntry.id, {
+        source: 'manual'
       })
 
-      return { message: '新增成功', id: newAnimal.id }
+      const newAnimal = await animalListModel.create(
+        {
+          id: newId,
+          shelter_pkid: data.shelter_pkid,
+          variety_id: varietyEntry.id,
+          sex: data.sex,
+          age: data.age,
+          bodytype: data.bodytype,
+          colour: data.colour,
+          userId: data.userId,
+          state: data.state
+        },
+        { transaction }
+      )
+
+      await surrenderModel.create(
+        {
+          animal_list_id: newAnimal.id,
+          username: data.username,
+          email: data.email,
+          phone: data.phone,
+          address: data.address,
+          profession: data.profession,
+          reason: data.reason
+        },
+        { transaction }
+      )
+
+      await transaction.commit()
+      return { message: '動物送養資料新增成功', id: newAnimal.id }
+
     } catch (error) {
-      console.error('手動新增 animalList 錯誤:', error)
+      await transaction.rollback()
+      console.error('動物送養資料新增失敗:', error)
       throw new Error(error.message || '手動新增 animalList 失敗')
     }
   }

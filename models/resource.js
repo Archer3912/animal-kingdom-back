@@ -12,7 +12,7 @@ const resourceModel = sequelize.define(
       autoIncrement: true
     },
     animal_list_id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING,
       allowNull: false
     },
     type: {
